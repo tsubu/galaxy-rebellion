@@ -2040,10 +2040,12 @@
     showScreen(null); fade(1, 300);
     setTimeout(startGame, 350);
   }
+  $('#callout').addEventListener('animationend', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('on'); });
   function startGame() {
     ensureAudio(); document.activeElement?.blur?.();
     timers = []; radioQ = []; radioT = 0;
     score = 0; shield = 100; kills = 0; invul = 0; paused = false; lastCapture = null;
+    $('#callout').classList.remove('on');   // 前回プレイの演出が HUD 再表示で再生されないように
     showScreen(null); $('#hud').classList.remove('hidden'); hostSend('start');
     $('#helpLine').textContent = isTouch ? 'ドラッグで移動・タッチ中は自動射撃' : '移動: WASD / 矢印　射撃: SPACE / 左クリック　魚雷: F / 右クリック　ポーズ: ESC　音: M';
     loadStage(1);
