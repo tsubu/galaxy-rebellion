@@ -866,6 +866,13 @@
       $('#radio').classList.add('on'); radioT = r.dur; SFX.radio();
     }
   }
+  // 画面上の演出（無線・警告・バナー・魚雷コール・スロー等）をすべて止めて消す
+  function resetOverlays() {
+    timers = []; radioQ = []; radioT = 0; warnT = 0; resetSlowmo();
+    for (const id of ['#radio', '#warn', '#banner', '#callout']) $(id).classList.remove('on');
+    $('#torpBtn').classList.remove('pulse'); $('#torpBtn').classList.add('hidden'); $('#tcomp').classList.add('hidden');
+    $('#vignette').style.opacity = 0;
+  }
   function warn(text, dur = 2.5) { $('#warn').textContent = text; $('#warn').classList.add('on'); warnT = dur; SFX.alarm(); }
   function showBanner(b1, b2, b3, dur) {
     $('#banner .b1').textContent = b1; $('#banner .b2').textContent = b2; $('#banner .b3').textContent = b3;
@@ -941,6 +948,7 @@
 
   function loadStage(n, isDemo = false) {
     stage = n; clearStage(); radioQ = []; resetSlowmo();
+    $('#callout').classList.remove('on');   // 前回の演出が HUD 再表示で再生されないように
     P.position.set(0, 0, 0); P.rotation.set(0, 0, 0); P.visible = true; pvel.set(0, 0);
     ret1.visible = ret2.visible = true;
     const st = STAGES[n];
@@ -1858,8 +1866,7 @@
   function showResult(win) {
     mode = 'result'; $('#hud').classList.add('hidden'); fade(0, 600);
     clearStage(); buildSpaceEnv(true); S = { speed: 8 };
-    P.visible = true; P.position.set(0, 0, 0); P.rotation.set(0, 0, 0); ret1.visible = ret2.visible = false; $('#warn').classList.remove('on');
-    $('#tcomp').classList.add('hidden'); $('#torpBtn').classList.add('hidden'); radioQ = []; radioT = 0; $('#radio').classList.remove('on');
+    P.visible = true; P.position.set(0, 0, 0); P.rotation.set(0, 0, 0); ret1.visible = ret2.visible = false; resetOverlays();
     let shieldBonus = 0;
     if (win) { shieldBonus = Math.round(shield) * 100; addScore(shieldBonus); }
     const stageLabel = win ? 'ALL CLEAR' : `STAGE ${stage}`;
@@ -1984,7 +1991,7 @@
   function startDemo() {
     if (mode !== 'title' || demo) return;
     demo = true; demoT = 0;
-    timers = []; radioQ = []; radioT = 0;
+    resetOverlays();
     score = 0; shield = 100; kills = 0; invul = 0; paused = false;
     showScreen(null); $('#hud').classList.remove('hidden'); $('#demoTag').classList.remove('hidden');
     loadStage(1, true);
@@ -2011,9 +2018,8 @@
   }
 
   function goTitle() {
-    resetSlowmo(); demo = false; titleIdle = 0; $('#demoTag').classList.add('hidden');
-    timers = []; radioQ = []; radioT = 0; $('#radio').classList.remove('on'); $('#warn').classList.remove('on'); $('#banner').classList.remove('on');
-    paused = false; $('#pause').classList.add('hidden'); $('#hud').classList.add('hidden'); $('#tcomp').classList.add('hidden'); $('#torpBtn').classList.add('hidden');
+    resetOverlays(); demo = false; titleIdle = 0; $('#demoTag').classList.add('hidden');
+    paused = false; $('#pause').classList.add('hidden'); $('#hud').classList.add('hidden');
     clearStage(); buildSpaceEnv(true); S = { speed: 8 };
     P.visible = true; P.position.set(0, 0, 0); P.rotation.set(0, 0, 0); ret1.visible = ret2.visible = false;
     mode = 'title'; showScreen('title'); $('#titleHi').textContent = topScore();
@@ -2040,12 +2046,11 @@
     showScreen(null); fade(1, 300);
     setTimeout(startGame, 350);
   }
-  $('#callout').addEventListener('animationend', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('on'); });
+  for (const ev of ['animationend', 'animationcancel']) $('#callout').addEventListener(ev, e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('on'); });
   function startGame() {
     ensureAudio(); document.activeElement?.blur?.();
-    timers = []; radioQ = []; radioT = 0;
+    resetOverlays();
     score = 0; shield = 100; kills = 0; invul = 0; paused = false; lastCapture = null;
-    $('#callout').classList.remove('on');   // 前回プレイの演出が HUD 再表示で再生されないように
     showScreen(null); $('#hud').classList.remove('hidden'); hostSend('start');
     $('#helpLine').textContent = isTouch ? 'ドラッグで移動・タッチ中は自動射撃' : '移動: WASD / 矢印　射撃: SPACE / 左クリック　魚雷: F / 右クリック　ポーズ: ESC　音: M';
     loadStage(1);
